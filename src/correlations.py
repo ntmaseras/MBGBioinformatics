@@ -18,7 +18,8 @@ def clean_achilles_data(data):
     
     # Melt the DataFrame
     data_clean = pd.melt(data, id_vars=["DepMap_ID"], var_name="genes", value_name="value_gene_selected")
-    
+    data_clean[['gene', 'gene_id']] = data_clean['genes'].str.split('_', expand=True)
+    data_clean.drop(columns=['genes'], inplace = True)
     return data_clean
 
 # Function to clean and preprocess the map data
@@ -30,39 +31,14 @@ def clean_map_data(map_data):
     
     return map_data
 
-# Function to calculate Pearson correlations
-def calculate_correlation(selected_gene, other_gene_data):
-    correlation, pvalue = pearsonr(selected_gene, other_gene_data)
-    return correlation, pvalue, -np.log10(pvalue)
+
+# correlations for a single gene
+def calculate_gene_correlations(other_gene):
+    other_gene_data = data[data['gene'] == other_gene]['value_gene_selected']
+    correlation, pvalue =  pearsonr(selected_gene_data, other_gene_data)
+    return {'SELECTED_GENE': GENE_SELECTED, 'EVALUATED_GENE': other_gene, 'CORRELATION': correlation, 'PVALUE': pvalue, 'LOGPVALUE': -np.log10(pvalue)}
 
 
-# Function to calculate correlations for a single gene
-def calculate_gene_correlations(GENE_SELECTED, data, selected_gene_data, unique_genes):
-    correlations = []
-    print("Starting to compute gene dependency for " + GENE_SELECTED)
-    
-    def calculate_single_gene_correlation(other_gene):
-        other_gene_data = data[data['gene'] == other_gene]['value_gene_selected']
-        correlation, pvalue, logpvalue = calculate_correlation(selected_gene_data, other_gene_data)
-        return {'SELECTED_GENE': GENE_SELECTED, 'EVALUATED_GENE': other_gene, 'CORRELATION': correlation, 'PVALUE': pvalue, 'LOGPVALUE': logpvalue}
-    
-    # Parallelize the computation
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        for gene_count, result in enumerate(executor.map(calculate_single_gene_correlation, unique_genes), 1):
-            correlations.append(result)
-            
-            # Print progress
-            if gene_count % 1000 == 0:
-                print(f"Computed correlations for {gene_count} / {len(unique_genes)} genes.")
-    
-    return correlations
-
-# Function to save results to a CSV file
-def save_correlation_results(correlations, GENE_SELECTED):
-    results = pd.DataFrame(correlations)
-    FILENAME = "../output/correlations/correlations_" + GENE_SELECTED + "_by_chr.csv"
-    # Save the results to a CSV file
-    results.to_csv(FILENAME, index=False)
 
 if __name__ == "__main__":
     # Parse command-line arguments
@@ -89,7 +65,20 @@ if __name__ == "__main__":
     
     selected_gene_data = achilles_clean[achilles_clean['gene'] == GENE_SELECTED]['value_gene_selected']
     
-    correlations = calculate_gene_correlations(GENE_SELECTED, achilles_clean, selected_gene_data, unique_genes)
-    
+    data = achilles_clean.copy()
+    correlations = []
+    print("Starting to compute gene dependency for " + GENE_SELECTED)
+
+    # concurrent.futures to parallelize the computation
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for gene_count, result in enumerate(executor.map(calculate_gene_correlations, unique_genes), 1):
+            correlations.append(result)
+            
+            # Print progress 
+            if gene_count % 1000 == 0:
+                print(f"Computed correlations for {gene_count} / {len(unique_genes)} genes.")
+
+    # Save the results to a CSV file    
+    FILENAME = "../output/correlations/correlations_" + GENE_SELECTED + "_by_chr.csv"
     # Save the results to a CSV file
-    save_correlation_results(correlations, GENE_SELECTED)
+    correlations.to_csv(FILENAME, index=False)
