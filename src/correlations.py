@@ -54,21 +54,21 @@ if __name__ == "__main__":
     map_file = args.map_file
     data_file = args.data_file
 
-    # Call functions to perform data processing
+    # Read data 
     map_data = pd.read_csv(map_file)
     achilles_data = pd.read_csv(data_file)
-    
+
+    # Call functions to perform data processing
     achilles_clean = clean_achilles_data(achilles_data)
     map_clean = clean_map_data(map_data)
     
-    unique_genes = achilles_clean['gene'].unique()
-    
-    selected_gene_data = achilles_clean[achilles_clean['gene'] == GENE_SELECTED]['value_gene_selected']
-    
+
+    # Compute correlations
     data = achilles_clean.copy()
+    unique_genes = data['gene'].unique()
+    selected_gene_data = data[data['gene'] == GENE_SELECTED]['value_gene_selected']
     correlations = []
     print("Starting to compute gene dependency for " + GENE_SELECTED)
-
     # concurrent.futures to parallelize the computation
     with concurrent.futures.ProcessPoolExecutor() as executor:
         for gene_count, result in enumerate(executor.map(calculate_gene_correlations, unique_genes), 1):
