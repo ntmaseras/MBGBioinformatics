@@ -9,7 +9,7 @@ This project aims to establish a map of genetic interactions focused on RNA-bind
     python3 correlations.py DROSHA
     ```
 
-- **Filtering per p-value (Threshold: 0.05):**
+- **Filtering per p-value (Threshold: -t):**
     ```bash
-    python3 pvaluefiltering.py -G DROSHA 
+    python3 pvaluefiltering.py -G DROSHA -t 0.01 
     ```
