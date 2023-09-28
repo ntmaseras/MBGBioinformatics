@@ -14,7 +14,7 @@ GENE_SELECTED = args.GENE_SELECTED
 #GENE_SELECTED = "DIS3L2"
 FILENAME = "../output/correlations/correlations_" + GENE_SELECTED + "_by_chr.csv"
 correlations = pd.read_csv(FILENAME)
-threshold = 0.05#-np.log10(args.LOG)
+threshold = 0.01#-np.log10(args.LOG)
 
 filtered_correlations = correlations[correlations['PVALUE'] <= threshold]
 print("{} significant genes".format(len(filtered_correlations)))

@@ -6,7 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import concurrent.futures
 import argparse
-import time
+
 
 # Function to clean and preprocess Achilles data
 def clean_achilles_data(data):
@@ -44,26 +44,23 @@ if __name__ == "__main__":
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description='Calculate gene correlations.')
     parser.add_argument('GENE_SELECTED', type=str, help='The selected gene name')
-    parser.add_argument('--map_file', type=str, default='data/22Q2/Achilles_guide_map.csv', help='Path to the map file')
-    parser.add_argument('--data_file', type=str, default='data/22Q2/Achilles_gene_effect.csv', help='Path to the data file')
-    #parser.add_argument('T', type=float, default=0.01, help='The threshold value')
+    parser.add_argument('--map_file', type=str, default='../data/22Q2/Achilles_guide_map.csv', help='Path to the map file')
+    parser.add_argument('--data_file', type=str, default='../data/22Q2/Achilles_gene_effect.csv', help='Path to the data file')
     args = parser.parse_args()
 
-    start_time = time.time()
-
     GENE_SELECTED = args.GENE_SELECTED
-    THRESHOLD = 0.01 #args.T
+
     # Call functions to perform data processing
     map_file = args.map_file
     data_file = args.data_file
 
     # Read data 
-    # map_data = pd.read_csv(map_file)
+    map_data = pd.read_csv(map_file)
     achilles_data = pd.read_csv(data_file)
 
     # Call functions to perform data processing
     achilles_clean = clean_achilles_data(achilles_data)
-    # map_clean = clean_map_data(map_data)
+    map_clean = clean_map_data(map_data)
     
 
     # Compute correlations
@@ -78,17 +75,10 @@ if __name__ == "__main__":
             correlations.append(result)
             
             # Print progress 
-            if gene_count % 5000 == 0:
+            if gene_count % 1000 == 0:
                 print(f"Computed correlations for {gene_count} / {len(unique_genes)} genes.")
 
-
-    filtered_correlations = correlations[correlations['PVALUE'] <= THRESHOLD]
-    # print("{} significant genes".format(len(filtered_correlations)))
-    
     # Save the results to a CSV file    
     FILENAME = "../output/correlations/correlations_" + GENE_SELECTED + "_by_chr.csv"
     # Save the results to a CSV file
-    filtered_correlations.to_csv(FILENAME, index=False)
-    end_time = time.time()
-    execution_time = end_time - start_time
-    print(f"Script execution time: {execution_time:.2f} seconds")
+    correlations.to_csv(FILENAME, index=False)
